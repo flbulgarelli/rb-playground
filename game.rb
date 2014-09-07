@@ -44,8 +44,8 @@ class Board
 end
 
 module Backward
-  def move_within_board?(slice_index)
-    slice_index > 0
+  def fall_out?(slice_index)
+    slice_index <= 0
   end
   def next(slice_index)
     slice_index - 1
@@ -53,8 +53,8 @@ module Backward
 end
 
 module Forward
-  def move_within_board?(slice_index)
-    slice_index < 3  
+  def fall_out?(slice_index)
+    slice_index >= 3  
   end
   def next(slice_index)
     slice_index + 1
@@ -86,6 +86,34 @@ def down
   Object.new.extend Forward, Vertical
 end
 
+
+class Update
+  def call(direction, index, value, slice)
+    new_value = new_value(value)
+    new_index = direction.next(index) 
+    slice[new_index] = new_value
+    slice[index] = nil
+    shift direction, slice, new_value, new_index
+  end
+end
+
+class Merge < Update
+  def new_value(value)
+    value * 2
+  end
+end
+
+class Push < Update 
+  def new_value(value)
+    value
+  end
+end
+
+class Skip
+  def call(direction, index, value, slice)
+  end
+end
+
 def move(direction, board)
   direction.slices(board).each do |slice|
     slice.each_with_index do |value, index|
@@ -95,26 +123,23 @@ def move(direction, board)
 end
 
 def shift(direction, slice, value, index)
-  next_index = direction.next(index)
-  if value && direction.move_within_board?(index) && can_move_to(next_index, value, slice)
-    if should_merge(next_index, value, slice)
-      new_value = value * 2
-    else
-      new_value = value
-    end
-    slice[next_index] = new_value
-    slice[index] = nil
-    shift direction, slice, new_value, next_index
-  end
+  action = action_for_move(direction, index, value, slice)
+  action.call(direction, index, value, slice) 
 end
 
-def can_move_to(new_index, value, slice)
-  !slice[new_index] || should_merge(new_index, value, slice)
+def action_for_move(direction, index, value, slice)
+  new_index = direction.next(index)
+  if !value || direction.fall_out?(index)
+    Skip.new
+  elsif !slice[new_index]
+    Push.new
+  elsif should_merge(new_index, value, slice)
+    Merge.new
+  else
+    Skip.new
+  end
 end
 
 def should_merge(new_index, value, slice) 
   slice[new_index] == value
 end
-
-
-
