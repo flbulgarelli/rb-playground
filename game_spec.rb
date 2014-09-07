@@ -45,3 +45,19 @@ describe 'mover right' do
     expect(b.rows[0].to_a).to eq([nil, nil, nil, 2])
   end  
 end
+describe 'mover down' do
+  let(:b) { Board.new }
+  it 'moves many places' do
+    b.put_at 3, 0, 2
+    move down, b
+    expect(b.columns[0].to_a).to eq([nil, nil, nil, 2])
+  end  
+end
+describe 'move up' do
+  let(:b) { Board.new }
+  it 'moves up places' do
+    b.put_at 0, 0, 2
+    move up, b
+    expect(b.columns[0].to_a).to eq([2, nil, nil, nil])
+  end  
+end
