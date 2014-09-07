@@ -1,9 +1,14 @@
-def new_board
-  (1..4).map { (1..4).map { nil } }
-end
+class Board
+  def initialize
+    @values = (1..4).map { (1..4).map { nil } }
+  end
+  def put_at(x, y, v) 
+    @values[x][y] = v
+  end
 
-def put_at(board, x, y, v) 
-  board[x][y] = v
+  def rows
+    @values
+  end
 end
 
 class Left
@@ -30,8 +35,10 @@ end
 def right
    Right.new
 end
+
+
 def move(direction, board)
-  board.each do |row|
+  board.rows.each do |row|
     row.each_with_index do |value, column|
       shift direction, row, value, column
     end
