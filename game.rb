@@ -18,10 +18,6 @@ class Slice
     to_a.each(&b)
   end
 
-  def each_with_index(&b)
-    to_a.each_with_index(&b)
-  end
-
   def to_a
     @values.map(&:value)
   end
@@ -86,14 +82,10 @@ def down
   Object.new.extend Forward, Vertical
 end
 
-
 class Update
-  def call(direction, index, value, slice)
-    new_value = new_value(value)
-    new_index = direction.next(index) 
-    slice[new_index] = new_value
-    slice[index] = nil
-    shift direction, slice, new_value, new_index
+  def call(pointer)
+    pointer.update new_value(pointer.value)
+    pointer.shift
   end
 end
 
@@ -110,36 +102,62 @@ class Push < Update
 end
 
 class Skip
-  def call(direction, index, value, slice)
+  def call(pointer)
+  end
+end
+
+class Pointer
+  attr_accessor :direction, :index, :slice
+
+  def initialize(direction, index, slice)
+    @direction = direction
+    @index = index
+    @slice = slice
+  end
+
+  def next_index
+    direction.next(index)
+  end
+
+  def value
+    slice[index]
+  end
+
+  def update(new_value)
+    slice[next_index] = new_value
+    slice[index] = nil
+    self.index = next_index
+  end
+
+  def shift
+    action_for_move.call(self)
+  end
+
+  def action_for_move
+    if !value || direction.fall_out?(index)
+      Skip.new
+    elsif !slice[next_index]
+      Push.new
+    elsif should_merge(next_index, value, slice)
+      Merge.new
+    else
+      Skip.new
+    end
+  end
+
+  def should_merge(next_index, value, slice) 
+    slice[next_index] == value
+  end
+end
+
+class Slice
+  def pointers(direction)
+    to_a.map.with_index { |value, index| Pointer.new(direction, index, self)  }
   end
 end
 
 def move(direction, board)
   direction.slices(board).each do |slice|
-    slice.each_with_index do |value, index|
-      shift direction, slice, value, index
-    end
+    slice.pointers(direction).each &:shift
   end
-end
-
-def shift(direction, slice, value, index)
-  action = action_for_move(direction, index, value, slice)
-  action.call(direction, index, value, slice) 
-end
-
-def action_for_move(direction, index, value, slice)
-  new_index = direction.next(index)
-  if !value || direction.fall_out?(index)
-    Skip.new
-  elsif !slice[new_index]
-    Push.new
-  elsif should_merge(new_index, value, slice)
-    Merge.new
-  else
-    Skip.new
-  end
-end
-
-def should_merge(new_index, value, slice) 
-  slice[new_index] == value
 end
