@@ -6,24 +6,49 @@ def put_at(board, x, y, v)
   board[x][y] = v
 end
 
-def move_left(board)
+class Left
+  def move_within_board?(column)
+    column > 0
+  end
+  def next(column)
+    column - 1
+  end
+end
+
+class Right 
+  def move_within_board?(column)
+    column < 3  
+  end
+  def next(column)
+    column + 1
+  end
+end
+
+def left
+  Left.new
+end
+def right
+   Right.new
+end
+def move(direction, board)
   board.each do |row|
     row.each_with_index do |value, column|
-      shift_left row, value, column
+      shift direction, row, value, column
     end
   end
 end
 
-def shift_left(row, value, column)
-  if value && column > 0 && can_move_to(column - 1, value, row)
-    if should_merge(column - 1, value, row)
+def shift(direction, row, value, column)
+  next_column = direction.next(column)
+  if value && direction.move_within_board?(column) && can_move_to(next_column, value, row)
+    if should_merge(next_column, value, row)
       new_value = value * 2
     else
-       new_value = value
+      new_value = value
     end
-    row[column - 1] = new_value
+    row[next_column] = new_value
     row[column] = nil
-    shift_left row, new_value, column - 1
+    shift direction, row, new_value, next_column
   end
 end
 
