@@ -43,60 +43,77 @@ class Board
   end
 end
 
-class Left
-  def move_within_board?(column)
-    column > 0
+module Backward
+  def move_within_board?(slice_index)
+    slice_index > 0
   end
-  def next(column)
-    column - 1
+  def next(slice_index)
+    slice_index - 1
   end
 end
 
-class Right 
-  def move_within_board?(column)
-    column < 3  
+module Forward
+  def move_within_board?(slice_index)
+    slice_index < 3  
   end
-  def next(column)
-    column + 1
+  def next(slice_index)
+    slice_index + 1
+  end
+end
+
+module Horizontal
+  def slices(board)
+    board.rows
+  end
+end
+
+module Vertical 
+  def slices(board)
+     board.columns
   end
 end
 
 def left
-  Left.new
+  Object.new.extend Backward, Horizontal 
 end
 def right
-   Right.new
+  Object.new.extend Forward, Horizontal
+end
+def up
+  Object.new.extend Backward, Vertical
+end
+def down
+  Object.new.extend Forward, Vertical
 end
 
-
 def move(direction, board)
-  board.rows.each do |row|
-    row.each_with_index do |value, column|
-      shift direction, row, value, column
+  direction.slices(board).each do |slice|
+    slice.each_with_index do |value, index|
+      shift direction, slice, value, index
     end
   end
 end
 
-def shift(direction, row, value, column)
-  next_column = direction.next(column)
-  if value && direction.move_within_board?(column) && can_move_to(next_column, value, row)
-    if should_merge(next_column, value, row)
+def shift(direction, slice, value, index)
+  next_index = direction.next(index)
+  if value && direction.move_within_board?(index) && can_move_to(next_index, value, slice)
+    if should_merge(next_index, value, slice)
       new_value = value * 2
     else
       new_value = value
     end
-    row[next_column] = new_value
-    row[column] = nil
-    shift direction, row, new_value, next_column
+    slice[next_index] = new_value
+    slice[index] = nil
+    shift direction, slice, new_value, next_index
   end
 end
 
-def can_move_to(new_column, value, row)
-  !row[new_column] || should_merge(new_column, value, row)
+def can_move_to(new_index, value, slice)
+  !slice[new_index] || should_merge(new_index, value, slice)
 end
 
-def should_merge(new_column, value, row) 
-  row[new_column] == value
+def should_merge(new_index, value, slice) 
+  slice[new_index] == value
 end
 
 
