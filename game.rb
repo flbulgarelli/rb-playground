@@ -1,13 +1,45 @@
-class Board
-  def initialize
-    @values = (1..4).map { (1..4).map { nil } }
+class Cell
+  attr_accessor :value
+end
+
+class Slice
+  def initialize(values)
+    @values = values
   end
-  def put_at(x, y, v) 
-    @values[x][y] = v
+  def []=(x, y) 
+    @values[x].value = y
   end
 
-  def rows
-    @values
+  def [](x)
+    @values[x].value
+  end  
+
+  def each(&b)
+    to_a.each(&b)
+  end
+
+  def each_with_index(&b)
+    to_a.each_with_index(&b)
+  end
+
+  def to_a
+    @values.map(&:value)
+  end
+end
+
+class Board
+  attr_accessor :rows, :columns
+
+  def initialize
+    columns = []
+    rows =    (0..3).map {     (0..3).map {     Cell.new   }  }
+    columns = (0..3).map { |y| (0..3).map { |x| rows[x][y] }  }
+    @rows    = rows.map    { |it| Slice.new(it) }
+    @columns = columns.map { |it| Slice.new(it) }
+  end
+
+  def put_at(x, y, v) 
+    @rows[x][y] = v
   end
 end
 
